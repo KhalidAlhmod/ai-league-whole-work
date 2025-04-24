@@ -1,0 +1,15 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
+  "run": {
+    "source": ".",
+    "serviceId": "lightgbm-api",
+    "region": "us-central1"
+  }
+}

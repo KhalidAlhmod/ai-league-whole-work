@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartTicket AI Scanner</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+</head>
+<body>
+  <h1>🎟️ SmartTicket AI Scanner</h1>
+  <p class="subtext">Scan your ticket QR code for fraud detection</p>
+
+  <button id="startBtn">📷 Start Scanning</button>
+  <div id="reader"></div>
+
+  <div id="status"></div>
+  <div id="result"></div>
+
+  <script>
+    const apiURL = "https://lightgbm-api-1069270133726.us-central1.run.app/predict";
+
+    function sendToAI(payload) {
+      document.getElementById("status").innerText = "🔄 Sending to AI model...";
+      document.getElementById("result").innerText = "";
+      document.getElementById("result").className = "";
+
+      fetch(apiURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("status").innerText = "✅ AI Model Response:";
+        const resultEl = document.getElementById("result");
+        resultEl.innerText = `Status: ${data.status}\nScore: ${data.score};`
+        resultEl.className = data.status;
+      })
+      .catch(err => {
+        document.getElementById("status").innerText = "❌ Error contacting AI model.";
+        console.error(err);
+      });
+    }
+
+    function handleScan(qrText) {
+      try {
+        const ticketData = JSON.parse(qrText);
+        sendToAI(ticketData);
+      } catch (e) {
+        const resultEl = document.getElementById("result");
+        resultEl.innerText = "❌ Invalid QR data (must be JSON).";
+        resultEl.className = "suspicious";
+      }
+    }
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      document.getElementById("reader").style.display = "block";
+      const html5QrCode = new Html5Qrcode("reader");
+
+      Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length) {
+          html5QrCode.start(
+            cameras[0].id,
+            { fps: 10, qrbox: 250 },
+            handleScan,
+            err => console.warn("QR scan error", err)
+          );
+        } else {
+          document.getElementById("status").innerText = "❌ No camera found.";
+        }
+      }).catch(err => {
+        document.getElementById("status").innerText = "❌ Unable to access camera.";
+        console.error(err);
+      });
+    });
+  </script>
+</body>
+</html>
